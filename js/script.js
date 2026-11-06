@@ -6,7 +6,6 @@ const gallery = document.getElementById('gallery');
 
 // Set up the date inputs using the helper in dateRange.js
 setupDateInputs(startInput, endInput);
-gallery.replaceChildren();
 
 function formatApiDate(date) {
   // Convert the input date from YYYY-MM-DD to the API's YYMMDD format
@@ -36,11 +35,18 @@ function getRandomImages(images) {
 
 async function showSpaceImages() {
   gallery.replaceChildren();
+  let loadingMessage;
 
   try {
     if (!startInput.value || !endInput.value || startInput.value > endInput.value) {
       throw new Error('Choose a valid date range.');
     }
+
+    loadingMessage = document.createElement('p');
+    loadingMessage.className = 'placeholder';
+    loadingMessage.textContent = 'Loading space images...';
+    loadingMessage.setAttribute('role', 'status');
+    gallery.append(loadingMessage);
 
     const url = new URL('https://science.nasa.gov/wp-json/wp/v2/apod-basic');
     url.searchParams.set('date_from', formatApiDate(startInput.value));
@@ -52,19 +58,48 @@ async function showSpaceImages() {
     }
 
     const images = getRandomImages(await response.json());
+    gallery.replaceChildren();
 
-    images.forEach((image) => {
-      const galleryItem = document.createElement('div');
+    images.forEach((image, index) => {
+      const galleryItem = document.createElement('button');
+      const explanationId = `apod-explanation-${index}`;
       galleryItem.className = 'gallery-item';
+      galleryItem.type = 'button';
+      galleryItem.setAttribute('aria-expanded', 'false');
+      galleryItem.setAttribute('aria-controls', explanationId);
 
       const imageElement = document.createElement('img');
       imageElement.src = image.hdurl;
       imageElement.alt = image.title;
 
-      galleryItem.append(imageElement);
+      const details = document.createElement('span');
+      details.className = 'gallery-item-details';
+
+      const title = document.createElement('span');
+      title.className = 'gallery-item-title';
+      title.textContent = image.title;
+
+      const date = document.createElement('span');
+      date.className = 'gallery-item-date';
+      date.textContent = image.date;
+
+      const explanation = document.createElement('div');
+      explanation.className = 'gallery-item-explanation';
+      explanation.id = explanationId;
+      explanation.innerHTML = image.explanation;
+      explanation.hidden = true;
+
+      details.append(title, date);
+      galleryItem.append(imageElement, details, explanation);
+      galleryItem.addEventListener('click', () => {
+        const isExpanded = galleryItem.getAttribute('aria-expanded') === 'true';
+        galleryItem.setAttribute('aria-expanded', String(!isExpanded));
+        explanation.hidden = isExpanded;
+      });
       gallery.append(galleryItem);
     });
   } catch (error) {
+    loadingMessage?.remove();
     console.error('Could not load the gallery:', error);
   }
 }
