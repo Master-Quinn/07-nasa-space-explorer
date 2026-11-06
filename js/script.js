@@ -18,7 +18,7 @@ function getRandomImages(images) {
   const imageUrls = new Set();
 
   images.forEach((image) => {
-    if (image.media_type === 'image' && image.hdurl && !imageUrls.has(image.hdurl)) {
+    if (image.hdurl && !imageUrls.has(image.hdurl)) {
       imageUrls.add(image.hdurl);
       uniqueImages.push(image);
     }
@@ -67,11 +67,17 @@ async function showSpaceImages() {
       galleryItem.type = 'button';
       galleryItem.setAttribute('aria-expanded', 'false');
       galleryItem.setAttribute('aria-controls', explanationId);
-
-      const imageElement = document.createElement('img');
-      imageElement.src = image.hdurl;
-      imageElement.alt = image.title;
-
+      
+      let imageElement;
+      if (image.media_type === 'image') {
+        imageElement = document.createElement('img');
+        imageElement.src = image.hdurl;
+        imageElement.alt = image.title;
+      } else if (image.media_type === 'video') {
+        imageElement = document.createElement('img');
+        imageElement.src = image.hdurl;
+        imageElement.alt = image.title;
+      }
       const details = document.createElement('span');
       details.className = 'gallery-item-details';
 
